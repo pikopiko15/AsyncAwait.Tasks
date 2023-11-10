@@ -19,7 +19,7 @@ internal class Program
     /// The Main method should not be changed at all.
     /// </summary>
     /// <param name="args"></param>
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         Console.WriteLine("Mentoring program L2. Async/await.V1. Task 1");
         Console.WriteLine("Calculating the sum of integers from 0 to N.");
@@ -33,7 +33,7 @@ internal class Program
         {
             if (int.TryParse(input, out var n))
             {
-                CalculateSum(n);
+                await CalculateSum(n);
             }
             else
             {
@@ -48,35 +48,28 @@ internal class Program
         Console.ReadLine();
     }
 
-    private static void CalculateSum(int n)
+    private static async Task CalculateSum(int n)
     {
         CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
         CancellationToken token = cancelTokenSource.Token;
 
         // todo: make calculation asynchronous
-        try
-        {
-            var t = Task.Run(() => Calculator.Calculate(n, token), token).ContinueWith((parent) => {
-                Console.WriteLine($"Sum for {n} = {parent.Result}.");
-                Console.WriteLine();
-                Console.WriteLine("Enter N: ");
-            });
+        var t = Task.Run(() => Calculator.CalculateAsync(n, token), token).ContinueWith((parent) => {
+            Console.WriteLine($"Sum for {n} = {parent.Result}.");
+            Console.WriteLine();
+            Console.WriteLine("Enter N: ");
+        });
 
-            if (!t.IsCompleted)
+        if (!t.IsCompleted)
+        {
+            Console.WriteLine($"The task for {n} started... Enter N to cancel the request:");
+
+            if (!t.IsCompleted && int.TryParse(Console.ReadLine(), out var number))
             {
-                Console.WriteLine($"The task for {n} started... Enter N to cancel the request:");
-
-                if (!t.IsCompleted && int.TryParse(Console.ReadLine(), out var number))
-                {
-                    cancelTokenSource.Cancel();
-                    Console.WriteLine($"Sum for {n} cancelled...");
-                    CalculateSum(number);
-                }
+                cancelTokenSource.Cancel();
+                Console.WriteLine($"Sum for {n} cancelled...");
+                await CalculateSum(number);
             }
-        }
-        catch
-        {
-            Console.WriteLine($"Sum for {n} cancelled...");
         }
     }
 }
